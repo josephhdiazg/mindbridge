@@ -1,4 +1,4 @@
-/*package com.usta.mindbridge.service;
+package com.usta.mindbridge.service;
 
 import com.usta.mindbridge.dto.ProfesionalDTO;
 import com.usta.mindbridge.model.Profesional;
