@@ -6,7 +6,6 @@ public class PatronResponse {
     private String tendencia;
     private Integer evaluacionesAnalizadas;
 
-    // Getters y Setters
     public String getPatron() { return patron; }
     public void setPatron(String patron) { this.patron = patron; }
 

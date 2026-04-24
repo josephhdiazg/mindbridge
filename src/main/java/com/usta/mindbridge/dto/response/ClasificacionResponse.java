@@ -1,6 +1,6 @@
 package com.usta.mindbridge.dto.response;
 
-import com.mindbridge.model.NivelRiesgo;
+import com.usta.mindbridge.model.NivelRiesgo;
 
 public class ClasificacionResponse {
 
@@ -16,7 +16,6 @@ public class ClasificacionResponse {
         this.justificacion = justificacion;
     }
 
-    // Getters y Setters
     public NivelRiesgo getNivelRiesgo() { return nivelRiesgo; }
     public void setNivelRiesgo(NivelRiesgo nivelRiesgo) { this.nivelRiesgo = nivelRiesgo; }
 

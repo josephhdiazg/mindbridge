@@ -13,7 +13,6 @@ public class IntervencionResponse {
     private Long alertaId;
     private Long profesionalId;
 
-    // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

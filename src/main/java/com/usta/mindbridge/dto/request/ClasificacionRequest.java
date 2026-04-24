@@ -13,7 +13,6 @@ public class ClasificacionRequest {
 
     private List<Long> factoresActivados;
 
-    // Getters y Setters
     public Long getEvaluacionId() { return evaluacionId; }
     public void setEvaluacionId(Long evaluacionId) { this.evaluacionId = evaluacionId; }
 

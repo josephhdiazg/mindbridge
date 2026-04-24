@@ -8,7 +8,6 @@ public class TextoAnalisisResponse {
     private Boolean riesgoDetectado;
     private List<String> fragmentos;
 
-    // Getters y Setters
     public List<String> getEtiquetas() { return etiquetas; }
     public void setEtiquetas(List<String> etiquetas) { this.etiquetas = etiquetas; }
 

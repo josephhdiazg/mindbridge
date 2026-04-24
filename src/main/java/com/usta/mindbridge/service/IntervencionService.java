@@ -1,14 +1,13 @@
 package com.usta.mindbridge.service;
 
-import com.mindbridge.dto.intervencion.IntervencionDTO;
-import com.mindbridge.dto.intervencion.IntervencionRequest;
-import com.mindbridge.dto.intervencion.IntervencionResponse;
-import com.mindbridge.model.Intervencion;
-import com.mindbridge.repository.IntervencionRepository;
+import com.usta.mindbridge.dto.IntervencionDTO;
+import com.usta.mindbridge.dto.request.IntervencionRequest;
+import com.usta.mindbridge.dto.response.IntervencionResponse;
+import com.usta.mindbridge.model.Intervencion;
+import com.usta.mindbridge.repository.IntervencionRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,16 +28,13 @@ public class IntervencionService {
         intervencion.setDescripcion(request.getDescripcion());
         intervencion.setDuracionMin(request.getDuracionMin());
         intervencion.setFecha(LocalDateTime.now());
-        // Nota: alertaId y profesionalId serán asignados con las entidades
-        // cuando Dev1/Dev2 tenga sus repos listos. Por ahora se deja la estructura.
         return toResponse(intervencionRepository.save(intervencion));
     }
 
     @Transactional(readOnly = true)
     public IntervencionResponse obtenerPorId(Long id) {
-        Intervencion intervencion = intervencionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Intervención no encontrada: " + id));
-        return toResponse(intervencion);
+        return toResponse(intervencionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Intervención no encontrada: " + id)));
     }
 
     @Transactional
@@ -56,8 +52,6 @@ public class IntervencionService {
         return intervencionRepository.findByAlertaId(alertaId)
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
-
-    // ─── Helpers ───────────────────────────────────────────────────────────
 
     private IntervencionResponse toResponse(Intervencion i) {
         IntervencionResponse r = new IntervencionResponse();

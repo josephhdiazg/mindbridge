@@ -1,11 +1,10 @@
 /*package com.usta.mindbridge.service;
 
-import com.mindbridge.dto.intervencion.ProfesionalDTO;
-import com.mindbridge.model.Profesional;
-import com.mindbridge.repository.ProfesionalRepository;
+import com.usta.mindbridge.dto.ProfesionalDTO;
+import com.usta.mindbridge.model.Profesional;
+import com.usta.mindbridge.repository.ProfesionalRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,7 +20,7 @@ public class ProfesionalService {
     @Transactional(readOnly = true)
     public List<ProfesionalDTO> listarDisponibles() {
         return profesionalRepository.findByDisponibleTrue()
-                .stream().map(this::toDTO).collect(Collectors.toList());
+            .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     private ProfesionalDTO toDTO(Profesional p) {

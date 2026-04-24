@@ -1,9 +1,8 @@
 package com.usta.mindbridge.repository;
 
-import com.mindbridge.model.Intervencion;
+import com.usta.mindbridge.model.Intervencion;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
 import java.util.List;
 
 @Repository

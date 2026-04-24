@@ -1,10 +1,8 @@
 package com.usta.mindbridge.controller;
 
-package com.mindbridge.controller;
-
-import com.mindbridge.dto.recurso.RecursoRequest;
-import com.mindbridge.dto.recurso.RecursoResponse;
-import com.mindbridge.service.RecursoApoyoService;
+import com.usta.mindbridge.dto.request.RecursoRequest;
+import com.usta.mindbridge.dto.response.RecursoResponse;
+import com.usta.mindbridge.service.RecursoApoyoService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,8 +22,7 @@ public class RecursoApoyoController {
 
     @GetMapping
     public ResponseEntity<Page<RecursoResponse>> listar(
-            @RequestParam(required = false) String tipo,
-            Pageable pageable) {
+            @RequestParam(required = false) String tipo, Pageable pageable) {
         return ResponseEntity.ok(recursoApoyoService.listar(tipo, pageable));
     }
 
@@ -43,8 +40,7 @@ public class RecursoApoyoController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<RecursoResponse> actualizar(
-            @PathVariable Long id,
-            @Valid @RequestBody RecursoRequest request) {
+            @PathVariable Long id, @Valid @RequestBody RecursoRequest request) {
         return ResponseEntity.ok(recursoApoyoService.actualizar(id, request));
     }
 

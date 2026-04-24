@@ -1,9 +1,9 @@
 package com.usta.mindbridge.service;
 
-import com.mindbridge.dto.recurso.RecursoRequest;
-import com.mindbridge.dto.recurso.RecursoResponse;
-import com.mindbridge.model.RecursoApoyo;
-import com.mindbridge.repository.RecursoApoyoRepository;
+import com.usta.mindbridge.dto.request.RecursoRequest;
+import com.usta.mindbridge.dto.response.RecursoResponse;
+import com.usta.mindbridge.model.RecursoApoyo;
+import com.usta.mindbridge.repository.RecursoApoyoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,9 +29,8 @@ public class RecursoApoyoService {
 
     @Transactional(readOnly = true)
     public RecursoResponse obtenerPorId(Long id) {
-        RecursoApoyo recurso = recursoApoyoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Recurso no encontrado: " + id));
-        return toResponse(recurso);
+        return toResponse(recursoApoyoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Recurso no encontrado: " + id)));
     }
 
     @Transactional
@@ -60,13 +59,10 @@ public class RecursoApoyoService {
 
     @Transactional
     public void eliminar(Long id) {
-        if (!recursoApoyoRepository.existsById(id)) {
+        if (!recursoApoyoRepository.existsById(id))
             throw new EntityNotFoundException("Recurso no encontrado: " + id);
-        }
         recursoApoyoRepository.deleteById(id);
     }
-
-    // ─── Helpers ───────────────────────────────────────────────────────────
 
     private void mapRequestToEntity(RecursoRequest request, RecursoApoyo recurso) {
         recurso.setTitulo(request.getTitulo());

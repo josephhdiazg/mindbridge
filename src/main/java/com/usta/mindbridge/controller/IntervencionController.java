@@ -1,16 +1,15 @@
 package com.usta.mindbridge.controller;
 
-import com.mindbridge.dto.intervencion.IntervencionDTO;
-import com.mindbridge.dto.intervencion.IntervencionRequest;
-import com.mindbridge.dto.intervencion.IntervencionResponse;
-import com.mindbridge.service.IntervencionService;
-import com.mindbridge.service.ProfesionalService;
-import com.mindbridge.dto.intervencion.ProfesionalDTO;
+import com.usta.mindbridge.dto.IntervencionDTO;
+import com.usta.mindbridge.dto.ProfesionalDTO;
+import com.usta.mindbridge.dto.request.IntervencionRequest;
+import com.usta.mindbridge.dto.response.IntervencionResponse;
+import com.usta.mindbridge.service.IntervencionService;
+import com.usta.mindbridge.service.ProfesionalService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -40,8 +39,7 @@ public class IntervencionController {
     @PutMapping("/api/intervenciones/{id}")
     @PreAuthorize("hasRole('PSICOLOGO')")
     public ResponseEntity<IntervencionResponse> actualizar(
-            @PathVariable Long id,
-            @Valid @RequestBody IntervencionRequest request) {
+            @PathVariable Long id, @Valid @RequestBody IntervencionRequest request) {
         return ResponseEntity.ok(intervencionService.actualizar(id, request));
     }
 

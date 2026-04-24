@@ -11,7 +11,6 @@ public class RecursoDTO {
     private String descripcion;
     private List<String> etiquetas;
 
-    // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

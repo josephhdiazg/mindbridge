@@ -1,12 +1,16 @@
 package com.usta.mindbridge.controller;
 
-import com.mindbridge.dto.ai.*;
-import com.mindbridge.service.AiService;
+import com.usta.mindbridge.dto.RecursoDTO;
+import com.usta.mindbridge.dto.request.ClasificacionRequest;
+import com.usta.mindbridge.dto.request.TextoAnalisisRequest;
+import com.usta.mindbridge.dto.response.ClasificacionResponse;
+import com.usta.mindbridge.dto.response.PatronResponse;
+import com.usta.mindbridge.dto.response.TextoAnalisisResponse;
+import com.usta.mindbridge.service.AiService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -32,7 +36,7 @@ public class AiController {
     }
 
     @GetMapping("/recomendar/{estudianteId}")
-    @PreAuthorize("hasAnyRole('PSICOLOGO', 'ADMIN') or #estudianteId == authentication.principal.id")
+    @PreAuthorize("hasAnyRole('PSICOLOGO', 'ADMIN')")
     public ResponseEntity<List<RecursoDTO>> recomendar(@PathVariable Long estudianteId) {
         return ResponseEntity.ok(aiService.recomendar(estudianteId));
     }

@@ -21,7 +21,6 @@ public class IntervencionRequest {
     @Min(1)
     private Integer duracionMin;
 
-    // Getters y Setters
     public Long getAlertaId() { return alertaId; }
     public void setAlertaId(Long alertaId) { this.alertaId = alertaId; }
 
