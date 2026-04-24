@@ -21,25 +21,25 @@ public class AlertaController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_PSICOLOGO', 'ROLE_ESTUDIANTE')")
     public ResponseEntity<Page<AlertaResumenResponse>> listar(Pageable pageable) {
         return ResponseEntity.ok(alertaService.listarPriorizadas(pageable));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_PSICOLOGO', 'ROLE_ESTUDIANTE')")
     public ResponseEntity<AlertaResponse> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(alertaService.obtenerPorId(id));
     }
 
     @PatchMapping("/{id}/atender")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_PSICOLOGO', 'ROLE_ESTUDIANTE')")
     public ResponseEntity<AlertaResponse> atender(@PathVariable Long id) {
         return ResponseEntity.ok(alertaService.marcarAtendida(id));
     }
 
     @GetMapping("/criticas")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_PSICOLOGO', 'ROLE_ESTUDIANTE')")
     public ResponseEntity<List<AlertaResumenResponse>> criticas() {
         return ResponseEntity.ok(alertaService.listarCriticas());
     }

@@ -32,26 +32,26 @@ public class RecursoApoyoController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('PSICOLOGO')")
     public ResponseEntity<RecursoResponse> crear(@Valid @RequestBody RecursoRequest request) {
         return ResponseEntity.status(201).body(recursoApoyoService.crear(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('PSICOLOGO')")
     public ResponseEntity<RecursoResponse> actualizar(
             @PathVariable Long id, @Valid @RequestBody RecursoRequest request) {
         return ResponseEntity.ok(recursoApoyoService.actualizar(id, request));
     }
 
     @PatchMapping("/{id}/toggle")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('PSICOLOGO')")
     public ResponseEntity<RecursoResponse> toggle(@PathVariable Long id) {
         return ResponseEntity.ok(recursoApoyoService.toggleActivo(id));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('PSICOLOGO')")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         recursoApoyoService.eliminar(id);
         return ResponseEntity.noContent().build();

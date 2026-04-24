@@ -51,7 +51,7 @@ public class EvaluacionController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_PSICOLOGO')")
     public ResponseEntity<Page<EvaluacionResponse>> listar(
             @RequestParam(required = false) NivelRiesgo nivel,
             Pageable pageable) {
@@ -59,7 +59,7 @@ public class EvaluacionController {
     }
 
     @GetMapping("/estudiante/{estudianteId}/alertas")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_PSICOLOGO', 'ROLE_ESTUDIANTE')")
     public ResponseEntity<List<AlertaResumenResponse>> alertasPorEstudiante(@PathVariable Long estudianteId) {
         return ResponseEntity.ok(alertaService.listarPorEstudiante(estudianteId));
     }

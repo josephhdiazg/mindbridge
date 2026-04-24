@@ -30,20 +30,20 @@ public class FactorRiesgoController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_PSICOLOGO')")
     public ResponseEntity<FactorRiesgoResponse> crear(@Valid @RequestBody FactorRiesgoRequest request) {
         return ResponseEntity.status(201).body(factorRiesgoService.crear(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_PSICOLOGO')")
     public ResponseEntity<FactorRiesgoResponse> actualizar(
             @PathVariable Long id, @Valid @RequestBody FactorRiesgoRequest request) {
         return ResponseEntity.ok(factorRiesgoService.actualizar(id, request));
     }
 
     @PatchMapping("/{id}/toggle")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_PSICOLOGO')")
     public ResponseEntity<FactorRiesgoResponse> toggle(@PathVariable Long id) {
         return ResponseEntity.ok(factorRiesgoService.toggleActivo(id));
     }

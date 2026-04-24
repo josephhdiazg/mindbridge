@@ -31,7 +31,7 @@ public class IntervencionController {
     }
 
     @GetMapping("/api/intervenciones/{id}")
-    @PreAuthorize("hasAnyRole('PSICOLOGO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('PSICOLOGO', 'PSICOLOGO')")
     public ResponseEntity<IntervencionResponse> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(intervencionService.obtenerPorId(id));
     }
@@ -50,7 +50,7 @@ public class IntervencionController {
     }
 
     @GetMapping("/api/profesionales")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PSICOLOGO')")
+    @PreAuthorize("hasAnyRole('PSICOLOGO', 'PSICOLOGO')")
     public ResponseEntity<List<ProfesionalDTO>> listarProfesionales(
             @RequestParam(required = false) Boolean disponible) {
         return ResponseEntity.ok(profesionalService.listarDisponibles());

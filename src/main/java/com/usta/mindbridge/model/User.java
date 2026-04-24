@@ -32,7 +32,7 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private Role role = Role.ROLE_USER;
+    private Role role = Role.ROLE_ESTUDIANTE;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
