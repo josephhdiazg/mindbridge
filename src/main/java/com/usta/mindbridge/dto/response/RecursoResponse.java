@@ -1,4 +1,4 @@
-package com.usta.mindbridge.dto.recurso.response;
+package com.usta.mindbridge.dto.response;
 
 import java.util.List;
 
