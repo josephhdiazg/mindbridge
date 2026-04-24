@@ -4,7 +4,7 @@ import com.usta.mindbridge.dto.request.LoginRequest;
 import com.usta.mindbridge.dto.request.RegisterRequest;
 import com.usta.mindbridge.dto.response.AuthResponse;
 import com.usta.mindbridge.dto.response.UserResponse;
-import com.usta.mindbridge.entity.User;
+import com.usta.mindbridge.model.User;
 import com.usta.mindbridge.exception.custom.DuplicateResourceException;
 import com.usta.mindbridge.mapper.UserMapper;
 import com.usta.mindbridge.repository.UserRepository;

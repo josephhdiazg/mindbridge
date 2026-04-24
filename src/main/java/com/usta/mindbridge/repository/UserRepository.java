@@ -1,6 +1,6 @@
 package com.usta.mindbridge.repository;
 
-import com.usta.mindbridge.entity.User;
+import com.usta.mindbridge.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;

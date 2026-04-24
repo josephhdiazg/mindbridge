@@ -2,7 +2,7 @@ package com.usta.mindbridge.mapper;
 
 import com.usta.mindbridge.dto.request.RegisterRequest;
 import com.usta.mindbridge.dto.response.UserResponse;
-import com.usta.mindbridge.entity.User;
+import com.usta.mindbridge.model.User;
 import org.springframework.stereotype.Component;
 
 @Component

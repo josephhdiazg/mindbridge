@@ -1,4 +1,4 @@
-package com.usta.mindbridge.entity;
+package com.usta.mindbridge.model;
 
 import jakarta.persistence.*;
 import lombok.*;
