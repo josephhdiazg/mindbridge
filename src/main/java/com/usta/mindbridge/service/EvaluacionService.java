@@ -4,6 +4,7 @@ import com.usta.mindbridge.dto.request.EvaluacionInicioRequest;
 import com.usta.mindbridge.dto.request.RespuestaRequest;
 import com.usta.mindbridge.dto.response.EvaluacionResponse;
 import com.usta.mindbridge.dto.response.ResultadoResponse;
+import com.usta.mindbridge.exception.custom.ResourceNotFoundException;
 import com.usta.mindbridge.model.*;
 import com.usta.mindbridge.repository.EstudianteRepository;
 import com.usta.mindbridge.repository.EvaluacionRepository;
@@ -42,7 +43,7 @@ public class EvaluacionService {
     @Transactional
     public EvaluacionResponse iniciar(EvaluacionInicioRequest request) {
         Estudiante estudiante = estudianteRepository.findById(request.getEstudianteId())
-                .orElseThrow(() -> new EntityNotFoundException("Estudiante no encontrado: " + request.getEstudianteId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Estudiante no encontrado: " + request.getEstudianteId()));
         Evaluacion evaluacion = Evaluacion.builder()
                 .estudiante(estudiante)
                 .estado(EstadoEvaluacion.PENDIENTE)
@@ -54,11 +55,11 @@ public class EvaluacionService {
     @Transactional
     public EvaluacionResponse agregarRespuestasYFinalizar(Long evaluacionId, List<RespuestaRequest> dtos) {
         Evaluacion evaluacion = evaluacionRepository.findById(evaluacionId)
-                .orElseThrow(() -> new EntityNotFoundException("Evaluacion no encontrada: " + evaluacionId));
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluacion no encontrada: " + evaluacionId));
 
         List<Respuesta> respuestas = dtos.stream().map(dto -> {
             FactorRiesgo factor = factorRiesgoRepository.findById(dto.getFactorRiesgoId())
-                    .orElseThrow(() -> new EntityNotFoundException("Factor no encontrado: " + dto.getFactorRiesgoId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Factor no encontrado: " + dto.getFactorRiesgoId()));
             return Respuesta.builder()
                     .evaluacion(evaluacion)
                     .factorRiesgo(factor)
@@ -86,13 +87,13 @@ public class EvaluacionService {
     @Transactional(readOnly = true)
     public EvaluacionResponse obtenerPorId(Long id) {
         return toResponse(evaluacionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Evaluacion no encontrada: " + id)));
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluacion no encontrada: " + id)));
     }
 
     @Transactional(readOnly = true)
     public ResultadoResponse obtenerResultado(Long id) {
         Evaluacion evaluacion = evaluacionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Evaluacion no encontrada: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluacion no encontrada: " + id));
         ResultadoResponse r = new ResultadoResponse();
         r.setPuntajeTotal(evaluacion.getPuntajeTotal());
         r.setNivelRiesgo(evaluacion.getNivelRiesgo());

@@ -1,0 +1,1384 @@
+{
+  "info": {
+    "name": "MindBridge API",
+    "_postman_id": "mindbridge-collection-2026",
+    "description": "Complete test suite for the MindBridge Spring Boot API.\n\n## Setup\n1. Set the `baseUrl` variable to `http://localhost:8080` (or your server address).\n2. Run **[Auth] Register (Psicólogo)** and **[Auth] Login (Psicólogo)** in that order — the login request auto-saves the JWT token into the `token` collection variable.\n3. All subsequent requests use that token automatically via the collection-level Authorization header.\n\n## Roles\n- `ROLE_ESTUDIANTE` — default role for registered users.\n- `ROLE_PSICOLOGO` — required for creating/modifying most resources. Must be set manually in the DB / or via a seed after registration.\n- `ROLE_ADMIN` — super role.\n\n## Test Order (Happy Path)\n1. Auth → Register → Login\n2. Factores de Riesgo → List → Create → Get by ID → Update → Toggle\n3. Evaluaciones → Iniciar → Responder → Get → Resultado → Listar\n4. Alertas → Listar → Get by ID → Criticas → Atender\n5. Intervenciones → Registrar → Get → Update → Listar por Alerta\n6. Profesionales → Listar\n7. Recursos de Apoyo → Listar → Create → Get → Update → Toggle → Delete\n8. AI → Clasificar → Analizar Texto → Recomendar → Detectar Patrón",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "evaluacionId", "value": "1", "type": "string" },
+    { "key": "alertaId", "value": "1", "type": "string" },
+    { "key": "factorRiesgoId", "value": "1", "type": "string" },
+    { "key": "intervencionId", "value": "1", "type": "string" },
+    { "key": "recursoId", "value": "1", "type": "string" },
+    { "key": "estudianteId", "value": "1", "type": "string" },
+    { "key": "profesionalId", "value": "1", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "[Auth] Register - Estudiante",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ana Estudiante\",\n  \"email\": \"ana.estudiante@mindbridge.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Response has success status', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.status).to.equal(201);",
+                  "    pm.expect(json.message).to.equal('User registered successfully');",
+                  "});",
+                  "pm.test('Response data has user fields', () => {",
+                  "    const data = pm.response.json().data;",
+                  "    pm.expect(data).to.have.property('id');",
+                  "    pm.expect(data).to.have.property('email');",
+                  "    pm.expect(data.email).to.equal('ana.estudiante@mindbridge.com');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Auth] Register - Psicólogo",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Carlos Psicólogo\",\n  \"email\": \"carlos.psicologo@mindbridge.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Response body contains user data', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.data).to.have.property('id');",
+                  "    pm.expect(body.data.email).to.equal('carlos.psicologo@mindbridge.com');",
+                  "    // Save userId for later use",
+                  "    pm.collectionVariables.set('psicologoUserId', body.data.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Auth] Login (saves token)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"carlos.psicologo@mindbridge.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response contains JWT token', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.data).to.have.property('token');",
+                  "    pm.expect(body.data.token).to.be.a('string').and.not.empty;",
+                  "    pm.collectionVariables.set('token', body.data.token);",
+                  "});",
+                  "pm.test('Login message is correct', () => {",
+                  "    pm.expect(pm.response.json().message).to.equal('Login successful');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Auth] Login - Invalid credentials (400 or 401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nobody@mindbridge.com\",\n  \"password\": \"wrongpassword\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 4xx for invalid credentials', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Auth] Register - Validation failure (short password)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test\",\n  \"email\": \"test@example.com\",\n  \"password\": \"123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 Bad Request for short password', () => {",
+                  "    pm.expect(pm.response.code).to.equal(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "⚠️ Factores de Riesgo",
+      "item": [
+        {
+          "name": "[Factores] Listar activos (público)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/factores-riesgo", "host": ["{{baseUrl}}"], "path": ["api", "factores-riesgo"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is an array', () => {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Factores] Crear factor de riesgo",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Bajo rendimiento académico\",\n  \"descripcion\": \"El estudiante presenta dificultades para mantener un rendimiento académico adecuado\",\n  \"peso\": 0.8,\n  \"categoria\": \"ACADEMICO\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/factores-riesgo", "host": ["{{baseUrl}}"], "path": ["api", "factores-riesgo"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Factor created with correct fields', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('id');",
+                  "    pm.expect(body.nombre).to.equal('Bajo rendimiento académico');",
+                  "    pm.expect(body.categoria).to.equal('ACADEMICO');",
+                  "    pm.expect(body.peso).to.equal(0.8);",
+                  "    pm.collectionVariables.set('factorRiesgoId', body.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Factores] Crear - categorías adicionales",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Aislamiento social\",\n  \"descripcion\": \"El estudiante muestra señales de aislamiento de sus pares\",\n  \"peso\": 0.7,\n  \"categoria\": \"SOCIAL\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/factores-riesgo", "host": ["{{baseUrl}}"], "path": ["api", "factores-riesgo"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Second factor saved', () => {",
+                  "    pm.expect(pm.response.json().id).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Factores] Crear - factor EMOCIONAL",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Signos de ansiedad crónica\",\n  \"descripcion\": \"El estudiante reporta síntomas de ansiedad de manera frecuente\",\n  \"peso\": 0.9,\n  \"categoria\": \"EMOCIONAL\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/factores-riesgo", "host": ["{{baseUrl}}"], "path": ["api", "factores-riesgo"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Factores] Obtener por ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/factores-riesgo/{{factorRiesgoId}}", "host": ["{{baseUrl}}"], "path": ["api", "factores-riesgo", "{{factorRiesgoId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Correct factor returned', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.id).to.equal(parseInt(pm.collectionVariables.get('factorRiesgoId')));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Factores] Obtener por ID - Not Found",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/factores-riesgo/99999", "host": ["{{baseUrl}}"], "path": ["api", "factores-riesgo", "99999"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Factores] Actualizar",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Bajo rendimiento académico (actualizado)\",\n  \"descripcion\": \"Descripción actualizada del factor\",\n  \"peso\": 0.75,\n  \"categoria\": \"ACADEMICO\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/factores-riesgo/{{factorRiesgoId}}", "host": ["{{baseUrl}}"], "path": ["api", "factores-riesgo", "{{factorRiesgoId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Factor updated', () => {",
+                  "    pm.expect(pm.response.json().nombre).to.include('actualizado');",
+                  "    pm.expect(pm.response.json().peso).to.equal(0.75);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Factores] Toggle activo/inactivo",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/factores-riesgo/{{factorRiesgoId}}/toggle", "host": ["{{baseUrl}}"], "path": ["api", "factores-riesgo", "{{factorRiesgoId}}", "toggle"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Toggle changed activo field', () => {",
+                  "    pm.expect(pm.response.json()).to.have.property('activo');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Factores] Crear - Validación (peso > 1.0)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Factor inválido\",\n  \"peso\": 2.5,\n  \"categoria\": \"ACADEMICO\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/factores-riesgo", "host": ["{{baseUrl}}"], "path": ["api", "factores-riesgo"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 for peso > 1.0', () => {",
+                  "    pm.expect(pm.response.code).to.equal(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📋 Evaluaciones",
+      "item": [
+        {
+          "name": "[Evaluaciones] Iniciar evaluación",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estudianteId\": {{estudianteId}}\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/evaluaciones", "host": ["{{baseUrl}}"], "path": ["api", "evaluaciones"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Evaluacion created', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('id');",
+                  "    pm.expect(body).to.have.property('estado');",
+                  "    pm.collectionVariables.set('evaluacionId', body.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Evaluaciones] Agregar respuestas y finalizar",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"factorRiesgoId\": {{factorRiesgoId}},\n    \"valorRespuesta\": 4\n  },\n  {\n    \"factorRiesgoId\": 2,\n    \"valorRespuesta\": 3\n  },\n  {\n    \"factorRiesgoId\": 3,\n    \"valorRespuesta\": 5\n  }\n]"
+            },
+            "url": { "raw": "{{baseUrl}}/api/evaluaciones/{{evaluacionId}}/respuestas", "host": ["{{baseUrl}}"], "path": ["api", "evaluaciones", "{{evaluacionId}}", "respuestas"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Evaluación updated with respuestas', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('id');",
+                  "    pm.expect(body).to.have.property('estado');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Evaluaciones] Obtener por ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/evaluaciones/{{evaluacionId}}", "host": ["{{baseUrl}}"], "path": ["api", "evaluaciones", "{{evaluacionId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Evaluacion returned', () => {",
+                  "    pm.expect(pm.response.json().id).to.equal(parseInt(pm.collectionVariables.get('evaluacionId')));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Evaluaciones] Obtener resultado",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/evaluaciones/{{evaluacionId}}/resultado", "host": ["{{baseUrl}}"], "path": ["api", "evaluaciones", "{{evaluacionId}}", "resultado"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Resultado has nivelRiesgo', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('nivelRiesgo');",
+                  "    pm.expect(['BAJO','MEDIO','ALTO','CRITICO']).to.include(body.nivelRiesgo);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Evaluaciones] Listar (requiere PSICOLOGO)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/evaluaciones?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "evaluaciones"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Paginated response', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.have.property('content');",
+                  "        pm.expect(body).to.have.property('totalElements');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Evaluaciones] Listar filtrado por nivelRiesgo",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/evaluaciones?nivel=ALTO&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "evaluaciones"],
+              "query": [
+                { "key": "nivel", "value": "ALTO" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Evaluaciones] Alertas por estudiante",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/evaluaciones/estudiante/{{estudianteId}}/alertas", "host": ["{{baseUrl}}"], "path": ["api", "evaluaciones", "estudiante", "{{estudianteId}}", "alertas"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Response is array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Evaluaciones] Iniciar - sin estudianteId (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{baseUrl}}/api/evaluaciones", "host": ["{{baseUrl}}"], "path": ["api", "evaluaciones"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 when estudianteId is missing', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔔 Alertas",
+      "item": [
+        {
+          "name": "[Alertas] Listar paginadas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/alertas?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alertas"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Paginated response', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.have.property('content');",
+                  "        if (body.content.length > 0) {",
+                  "            pm.collectionVariables.set('alertaId', body.content[0].id);",
+                  "        }",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Alertas] Obtener por ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/alertas/{{alertaId}}", "host": ["{{baseUrl}}"], "path": ["api", "alertas", "{{alertaId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403 or 404', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403, 404]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Alerta has required fields', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.have.property('id');",
+                  "        pm.expect(body).to.have.property('nivelRiesgo');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Alertas] Listar críticas",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/alertas/criticas", "host": ["{{baseUrl}}"], "path": ["api", "alertas", "criticas"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Response is array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Alertas] Marcar como atendida",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/alertas/{{alertaId}}/atender", "host": ["{{baseUrl}}"], "path": ["api", "alertas", "{{alertaId}}", "atender"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403 or 404', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Alertas] Sin token (401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/alertas", "host": ["{{baseUrl}}"], "path": ["api", "alertas"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 401 Unauthorized without token', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🩺 Intervenciones",
+      "item": [
+        {
+          "name": "[Intervenciones] Registrar",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alertaId\": {{alertaId}},\n  \"tipo\": \"ORIENTACION\",\n  \"descripcion\": \"Sesión de orientación psicológica realizada con el estudiante para abordar factores de riesgo identificados\",\n  \"profesionalId\": {{profesionalId}},\n  \"duracionMin\": 60\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/intervenciones", "host": ["{{baseUrl}}"], "path": ["api", "intervenciones"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 403]);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    pm.test('Intervencion created', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.have.property('id');",
+                  "        pm.expect(body.tipo).to.equal('ORIENTACION');",
+                  "        pm.collectionVariables.set('intervencionId', body.id);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Intervenciones] Obtener por ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/intervenciones/{{intervencionId}}", "host": ["{{baseUrl}}"], "path": ["api", "intervenciones", "{{intervencionId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403 or 404', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Intervenciones] Actualizar",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alertaId\": {{alertaId}},\n  \"tipo\": \"SEGUIMIENTO\",\n  \"descripcion\": \"Sesión de seguimiento posterior a la orientación inicial\",\n  \"profesionalId\": {{profesionalId}},\n  \"duracionMin\": 45\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/intervenciones/{{intervencionId}}", "host": ["{{baseUrl}}"], "path": ["api", "intervenciones", "{{intervencionId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403 or 404', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403, 404]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Tipo updated to SEGUIMIENTO', () => {",
+                  "        pm.expect(pm.response.json().tipo).to.equal('SEGUIMIENTO');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Intervenciones] Listar por alerta",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/alertas/{{alertaId}}/intervenciones", "host": ["{{baseUrl}}"], "path": ["api", "alertas", "{{alertaId}}", "intervenciones"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Response is array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Intervenciones] Registrar - validación sin descripción (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alertaId\": 1,\n  \"tipo\": \"ORIENTACION\",\n  \"profesionalId\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/intervenciones", "host": ["{{baseUrl}}"], "path": ["api", "intervenciones"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 for missing descripcion', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "👨‍⚕️ Profesionales",
+      "item": [
+        {
+          "name": "[Profesionales] Listar disponibles",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/profesionales", "host": ["{{baseUrl}}"], "path": ["api", "profesionales"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Response is array', () => {",
+                  "        pm.expect(pm.response.json()).to.be.an('array');",
+                  "    });",
+                  "    if (pm.response.json().length > 0) {",
+                  "        pm.collectionVariables.set('profesionalId', pm.response.json()[0].id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Profesionales] Listar con filtro disponible",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/profesionales?disponible=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profesionales"],
+              "query": [{ "key": "disponible", "value": "true" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📚 Recursos de Apoyo",
+      "item": [
+        {
+          "name": "[Recursos] Listar (público)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/recursos?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "recursos"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Paginated response', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('content');",
+                  "    pm.expect(body).to.have.property('totalElements');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Recursos] Listar filtrado por tipo",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/recursos?tipo=VIDEO&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "recursos"],
+              "query": [
+                { "key": "tipo", "value": "VIDEO" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Recursos] Crear recurso",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Técnicas de manejo del estrés académico\",\n  \"tipo\": \"VIDEO\",\n  \"url\": \"https://www.youtube.com/watch?v=example\",\n  \"descripcion\": \"Video con técnicas prácticas para gestionar el estrés durante los períodos de exámenes\",\n  \"etiquetas\": [\"estres\", \"academico\", \"bienestar\"]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/recursos", "host": ["{{baseUrl}}"], "path": ["api", "recursos"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 403]);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    pm.test('Recurso created with correct fields', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.have.property('id');",
+                  "        pm.expect(body.titulo).to.equal('Técnicas de manejo del estrés académico');",
+                  "        pm.expect(body.tipo).to.equal('VIDEO');",
+                  "        pm.collectionVariables.set('recursoId', body.id);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Recursos] Crear - ARTICULO",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Guía de salud mental universitaria\",\n  \"tipo\": \"ARTICULO\",\n  \"url\": \"https://mindbridge.edu.co/articulos/salud-mental\",\n  \"descripcion\": \"Artículo con orientaciones para el cuidado de la salud mental en el entorno universitario\",\n  \"etiquetas\": [\"salud mental\", \"universidad\", \"guia\"]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/recursos", "host": ["{{baseUrl}}"], "path": ["api", "recursos"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Recursos] Obtener por ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/recursos/{{recursoId}}", "host": ["{{baseUrl}}"], "path": ["api", "recursos", "{{recursoId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Recurso has expected fields', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('id');",
+                  "    pm.expect(body).to.have.property('titulo');",
+                  "    pm.expect(body).to.have.property('tipo');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Recursos] Obtener por ID - Not Found",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/recursos/99999", "host": ["{{baseUrl}}"], "path": ["api", "recursos", "99999"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Recursos] Actualizar",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Técnicas de manejo del estrés (actualizado)\",\n  \"tipo\": \"VIDEO\",\n  \"url\": \"https://www.youtube.com/watch?v=example-v2\",\n  \"descripcion\": \"Versión actualizada con nuevas técnicas\",\n  \"etiquetas\": [\"estres\", \"academico\", \"bienestar\", \"actualizado\"]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/recursos/{{recursoId}}", "host": ["{{baseUrl}}"], "path": ["api", "recursos", "{{recursoId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Titulo updated', () => {",
+                  "        pm.expect(pm.response.json().titulo).to.include('actualizado');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Recursos] Toggle activo/inactivo",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/recursos/{{recursoId}}/toggle", "host": ["{{baseUrl}}"], "path": ["api", "recursos", "{{recursoId}}", "toggle"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Recursos] Eliminar",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/recursos/{{recursoId}}", "host": ["{{baseUrl}}"], "path": ["api", "recursos", "{{recursoId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 204 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([204, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Recursos] Crear - URL inválida (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Recurso URL inválida\",\n  \"tipo\": \"ARTICULO\",\n  \"url\": \"no-es-una-url-valida\",\n  \"descripcion\": \"Descripción de prueba\",\n  \"etiquetas\": [\"test\"]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/recursos", "host": ["{{baseUrl}}"], "path": ["api", "recursos"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 for invalid URL', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Recursos] Crear - sin etiquetas (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Recurso sin etiquetas\",\n  \"tipo\": \"GUIA\",\n  \"descripcion\": \"Descripción de prueba\",\n  \"etiquetas\": []\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/recursos", "host": ["{{baseUrl}}"], "path": ["api", "recursos"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 for empty etiquetas', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🤖 AI",
+      "item": [
+        {
+          "name": "[AI] Clasificar evaluación",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evaluacionId\": {{evaluacionId}},\n  \"puntaje\": 68.5,\n  \"factoresActivados\": [{{factorRiesgoId}}]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ai/clasificar", "host": ["{{baseUrl}}"], "path": ["api", "ai", "clasificar"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Clasificacion response has nivelRiesgo', () => {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body).to.have.property('nivelRiesgo');",
+                  "        pm.expect(['BAJO','MEDIO','ALTO','CRITICO']).to.include(body.nivelRiesgo);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[AI] Analizar texto",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Me siento muy estresado con los exámenes, no he podido dormir bien y me cuesta concentrarme en los estudios. Siento que no voy a lograr pasar el semestre.\",\n  \"estudianteId\": {{estudianteId}}\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ai/analizar-texto", "host": ["{{baseUrl}}"], "path": ["api", "ai", "analizar-texto"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Analisis response has sentiment', () => {",
+                  "        pm.expect(pm.response.json()).to.have.property('sentimiento');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[AI] Analizar texto - demasiado largo (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat.\",\n  \"estudianteId\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ai/analizar-texto", "host": ["{{baseUrl}}"], "path": ["api", "ai", "analizar-texto"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 for text over 1000 chars', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[AI] Recomendar recursos por estudiante",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/ai/recomendar/{{estudianteId}}", "host": ["{{baseUrl}}"], "path": ["api", "ai", "recomendar", "{{estudianteId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Recommendations is an array', () => {",
+                  "        pm.expect(pm.response.json()).to.be.an('array');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[AI] Detectar patrón por estudiante",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/ai/patron/{{estudianteId}}", "host": ["{{baseUrl}}"], "path": ["api", "ai", "patron", "{{estudianteId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Patron response has data', () => {",
+                  "        pm.expect(pm.response.json()).to.be.an('object');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔒 Security / Auth Guard",
+      "item": [
+        {
+          "name": "[Security] Access protected route without token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/factores-riesgo", "host": ["{{baseUrl}}"], "path": ["api", "factores-riesgo"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 401 or 403 without token', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Security] Access with invalid/expired token",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "eyJhbGciOiJIUzI1NiJ9.invalid.token", "type": "string" }]
+            },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/factores-riesgo", "host": ["{{baseUrl}}"], "path": ["api", "factores-riesgo"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 401 or 403 with invalid token', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Security] /auth/login is public (no token needed)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"carlos.psicologo@mindbridge.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login endpoint is publicly accessible (should not 401)', () => {",
+                  "    pm.expect(pm.response.code).to.not.equal(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

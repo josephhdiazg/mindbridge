@@ -1,12 +1,14 @@
 package com.usta.mindbridge.dto.response;
 
+import com.usta.mindbridge.model.TipoRecurso;
+
 import java.util.List;
 
 public class RecursoResponse {
 
     private Long id;
     private String titulo;
-    private String tipo;
+    private TipoRecurso tipo;
     private String url;
     private String descripcion;
     private List<String> etiquetas;
@@ -18,8 +20,8 @@ public class RecursoResponse {
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
 
-    public String getTipo() { return tipo; }
-    public void setTipo(String tipo) { this.tipo = tipo; }
+    public TipoRecurso getTipo() { return tipo; }
+    public void setTipo(TipoRecurso tipo) { this.tipo = tipo; }
 
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }

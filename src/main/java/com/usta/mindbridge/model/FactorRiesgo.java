@@ -23,7 +23,7 @@ public class FactorRiesgo {
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    @Column(nullable = false, precision = 3, scale = 2)
+    @Column(nullable = false, precision = 3)
     private Double peso;
 
     @Enumerated(EnumType.STRING)

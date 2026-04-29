@@ -27,6 +27,5 @@ public interface EvaluacionRepository extends JpaRepository<Evaluacion, Long> {
             @Param("hasta") LocalDateTime hasta);
 
     @Query("SELECT e FROM Evaluacion e WHERE e.estudiante.id = :estudianteId ORDER BY e.fecha DESC")
-    Optional<Evaluacion> findUltimaEvaluacionByEstudiante(@Param("estudianteId") Long estudianteId,
-                                                          Pageable pageable);
+    Optional<Evaluacion> findUltimaEvaluacionByEstudiante(@Param("estudianteId") Long estudianteId);
 }

@@ -1,5 +1,6 @@
 package com.usta.mindbridge.dto.request;
 
+import com.usta.mindbridge.model.TipoRecurso;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -12,7 +13,7 @@ public class RecursoRequest {
     private String titulo;
 
     @NotNull
-    private String tipo;
+    private TipoRecurso tipo;
 
     @URL
     private String url;
@@ -26,8 +27,8 @@ public class RecursoRequest {
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
 
-    public String getTipo() { return tipo; }
-    public void setTipo(String tipo) { this.tipo = tipo; }
+    public TipoRecurso getTipo() { return tipo; }
+    public void setTipo(TipoRecurso tipo) { this.tipo = tipo; }
 
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }
